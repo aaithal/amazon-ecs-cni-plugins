@@ -16,6 +16,7 @@ package engine
 import (
 	"context"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"syscall"
@@ -136,6 +137,10 @@ func (client *dhclient) Start(deviceName string, ipRev int) error {
 	if err != nil {
 		log.Errorf("Error executing '%s' with args '%v': raw output: %s",
 			client.executable, args, string(out))
+		if syscallErr, ok := err.(*os.SyscallError); ok && syscallErr.Syscall == "wait" && syscallErr.Err.Error() == "no child processes" {
+			log.Infof("Ignoring err: %v", err)
+			return nil
+		}
 		return errors.Wrapf(err,
 			"engine dhclient: unable to start dhclient for ipv%d address; command: %s %v; output: %s",
 			ipRev, client.executable, args, string(out))
